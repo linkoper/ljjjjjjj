@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foro de Medio Ambiente - MBUENTE</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            text-align: center;
+            padding: 1em;
+        }
+        nav {
+            background-color: #333;
+            overflow: hidden;
+        }
+        nav a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+        }
+        nav a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+        .content {
+            margin: 20px;
+        }
+        .post {
+            background-color: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 15px;
+        }
+        .post img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .post-content {
+            flex-grow: 1;
+        }
+        .post h3 {
+            margin: 0;
+            color: #333;
+        }
+        .post p {
+            color: #555;
+            margin-top: 10px;
+        }
+        .post .author {
+            font-weight: bold;
+        }
+        form {
+            background-color: white;
+            padding: 20px;
+            margin-bottom: 30px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        form input, form textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        form button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #45a049;
+        }
+        footer {
+            background-color: #333;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Foro MBUENTE - Medio Ambiente</h1>
+    </header>
+
+    <nav>
+        <a href="#">Inicio</a>
+        <a href="#">Temas</a>
+        <a href="#">Crear Post</a>
+        <a href="#">Contacto</a>
+    </nav>
+
+    <div class="content">
+        <h2>Crear un Post</h2>
+        <form id="postForm">
+            <input type="text" id="postTitle" placeholder="Título del Post" required />
+            <textarea id="postContent" placeholder="Contenido del Post" required></textarea>
+            <button type="submit">Publicar</button>
+        </form>
+
+        <div id="posts">
+            <!-- Los posts se cargarán aquí -->
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Foro MBUENTE. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.1.3/socket.io.min.js"></script>
+    <script>
+        const socket = io('http://localhost:5000');  // Conectarse al servidor de WebSocket
+
+        // Función para mostrar los posts
+        function displayPost(post) {
+            const postContainer = document.getElementById('posts');
+            const postElement = document.createElement('div');
+            postElement.classList.add('post');
+
+            postElement.innerHTML = `
+                <img src="${post.profilePic}" alt="Perfil" />
+                <div class="post-content">
+                    <h3>${post.title}</h3>
+                    <p>${post.content}</p>
+                    <p class="author">Publicado por ${post.author}</p>
+                </div>
+            `;
+
+            postContainer.appendChild(postElement);
+        }
+
+        // Enviar un nuevo post
+        document.getElementById('postForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title = document.getElementById('postTitle').value;
+            const content = document.getElementById('postContent').value;
+
+            // Crear un objeto de post
+            const post = {
+                title,
+                content,
+                author: 'Juan Pérez',  // Nombre del autor (puedes hacerlo dinámico si deseas)
+                profilePic: 'https://www.w3schools.com/w3images/avatar2.png'  // Imagen de perfil predeterminada
+            };
+
+            // Enviar el post al servidor
+            await fetch('http://localhost:5000/api/posts', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(post)
+            });
+
+            // Limpiar el formulario
+            document.getElementById('postTitle').value = '';
+            document.getElementById('postContent').value = '';
+        });
+
+        // Recibir posts iniciales al cargar la página
+        socket.on('initialPosts', (posts) => {
+            posts.forEach(post => displayPost(post));
+        });
+
+        // Escuchar nuevos posts en tiempo real
+        socket.on('newPost', (post) => {
+            displayPost(post);
+        });
+    </script>
+
+</body>
+</html>
